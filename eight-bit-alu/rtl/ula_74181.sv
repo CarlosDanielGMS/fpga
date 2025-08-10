@@ -9,7 +9,7 @@ module ula_74181
 
 logic [4:0] full_calc;
 
-always_comb
+always @(*)
     begin
         if (m)
             begin
