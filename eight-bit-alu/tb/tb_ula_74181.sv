@@ -15,7 +15,7 @@ ula_74181 dut
     .c_in(c_in),
     .f(f),
     .a_eq_b(a_eq_b),
-    .c_out(c_out),
+    .c_out(c_out)
 );
 
 endmodule
