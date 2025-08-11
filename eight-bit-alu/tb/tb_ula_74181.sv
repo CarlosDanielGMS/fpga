@@ -29,16 +29,21 @@ initial
             begin
                 m = mode;
 
-                for (int selection = 4'b0000; selection <= 4'b1111; selection++)
+                for (int cin = 1'b0; cin <= 1'b1; cin++)
                     begin
-                        s = selection;
-                        a = 4'b0100;
-                        b = 4'b0011;
-                        c_in = 1'b1;
+                        c_in = cin;
 
-                        #10;
+                        for (int selection = 4'b0000; selection <= 4'b1111; selection++)
+                            begin
+                                s = selection;
+                                
+                                a = 4'b0100;
+                                b = 4'b0011;
 
-                        $display("M: %b, S: %0d, A: %0d, B: %0d, C_IN: %b, F: %0d, C_OUT: %b", m, s, a, b, c_in, f, c_out);
+                                #10;
+
+                                $display("M: %b, S: %0d, A: %0d, B: %0d, C_IN: %b, F: %0d, C_OUT: %b", m, s, a, b, c_in, f, c_out);
+                            end
                     end
             end
 

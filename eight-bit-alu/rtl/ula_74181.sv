@@ -26,7 +26,7 @@ always @(*)
                     4'b1001: f = ~(a ^ b);
                     4'b1010: f = b;
                     4'b1011: f = a & b;
-                    4'b1100: f = 4'b0001;
+                    4'b1100: f = 4'b1111;
                     4'b1101: f = a | ~b;
                     4'b1110: f = a | b;
                     4'b1111: f = a;
@@ -36,25 +36,50 @@ always @(*)
                 full_calc = f;
                 c_out = full_calc[4];
             end
+        else if (c_in)
+            begin
+                case (s)
+                    4'b0000: full_calc = a;
+                    4'b0001: full_calc = a | b;
+                    4'b0010: full_calc = a | ~b;
+                    4'b0011: full_calc = 5'b11111;
+                    4'b0100: full_calc = a + a & ~b;
+                    4'b0101: full_calc = (a | b) + (a & ~b);
+                    4'b0110: full_calc = a - b - 1;
+                    4'b0111: full_calc = (a & (~b)) - 1;
+                    4'b1000: full_calc = a + (a & b);
+                    4'b1001: full_calc = a + b;
+                    4'b1010: full_calc = a | ~b + (a & b);
+                    4'b1011: full_calc = (a & b) - 1;
+                    4'b1100: full_calc = a + a;
+                    4'b1101: full_calc = (a | b) + a;
+                    4'b1110: full_calc = (a | ~b) + a;
+                    4'b1111: full_calc = a - 1;
+                    default: full_calc = 5'b00000;
+                endcase
+
+                f = full_calc[3:0];
+                c_out = full_calc[4];
+            end
         else
             begin
                 case (s)
-                    4'b0000: full_calc = a + (~c_in);
-                    4'b0001: full_calc = (a | b) + (~c_in);
-                    4'b0010: full_calc = (a | ~b) + (~c_in);
-                    4'b0011: full_calc = 5'b11111 + (~c_in);
-                    4'b0100: full_calc = (a + (a & ~b)) + (~c_in);
-                    4'b0101: full_calc = ((a | b) + (a & ~b)) + (~c_in);
-                    4'b0110: full_calc = (a - b - 1) + (~c_in);
-                    4'b0111: full_calc = ((a & ~b) - 1) + (~c_in);
-                    4'b1000: full_calc = (a + (a & b)) + (~c_in);
-                    4'b1001: full_calc = (a + b) + (~c_in);
-                    4'b1010: full_calc = ((a | ~b) + (a & b)) + (~c_in);
-                    4'b1011: full_calc = ((a & b) - 1) + (~c_in);
-                    4'b1100: full_calc = (a + a) + (~c_in);
-                    4'b1101: full_calc = ((a | b) + a) + (~c_in);
-                    4'b1110: full_calc = ((a | ~b) + a) + (~c_in);
-                    4'b1111: full_calc = (a - 1) + (~c_in);
+                    4'b0000: full_calc = a + 1;
+                    4'b0001: full_calc = (a | b) + 1;
+                    4'b0010: full_calc = (a | ~b) + 1;
+                    4'b0011: full_calc = 5'b00000;
+                    4'b0100: full_calc = (a + (a & ~b)) + 1;
+                    4'b0101: full_calc = ((a | b) + (a & ~b)) + 1;
+                    4'b0110: full_calc = (a - b);
+                    4'b0111: full_calc = (a & ~b);
+                    4'b1000: full_calc = (a + (a & b)) + 1;
+                    4'b1001: full_calc = (a + b) + 1;
+                    4'b1010: full_calc = ((a | ~b) + (a & b)) + 1;
+                    4'b1011: full_calc = (a & b);
+                    4'b1100: full_calc = (a + a) + 1;
+                    4'b1101: full_calc = ((a | b) + a) + 1;
+                    4'b1110: full_calc = ((a | ~b) + a) + 1;
+                    4'b1111: full_calc = a;
                     default: full_calc = 5'b00000;
                 endcase
 
