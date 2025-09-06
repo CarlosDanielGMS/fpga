@@ -1,4 +1,4 @@
-module 74181_alu
+module alu_74181
 (
     input logic [3:0] a, b, s,
     input logic m, c_in,
