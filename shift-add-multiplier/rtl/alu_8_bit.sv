@@ -11,7 +11,7 @@ module alu_8_bit
 logic [3:0] f_lowest, f_highest;
 logic c_out_lowest, c_out_highest;
 
-alu_74181 ula_lowest
+alu_74181 alu_lowest
 (
     .a(a[3:0]),
     .b(b[3:0]),
@@ -23,7 +23,7 @@ alu_74181 ula_lowest
     .c_out(c_out_lowest)
 );
 
-alu_74181 ula_highest
+alu_74181 alu_highest
 (
     .a(a[7:4]),
     .b(b[7:4]),
