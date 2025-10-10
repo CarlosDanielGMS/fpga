@@ -90,44 +90,61 @@ static void toggle_led(void)
 
 static void calculate_dot_product(void)
 {
+    char *read;
     int a0, a1, a2, a3, a4, a5, a6, a7;
     int b0, b1, b2, b3, b4, b5, b6, b7;
     uint64_t result;
     
     // solicita os valores
     printf("Digite A0\n");
-    scanf("%d", &a0);
+    while ((read = readstr()) == NULL);
+    a0 = atoi(read);
     printf("Digite A1\n");
-    scanf("%d", &a1);
+    while ((read = readstr()) == NULL);
+    a1 = atoi(read);
     printf("Digite A2\n");
-    scanf("%d", &a2);
+    while ((read = readstr()) == NULL);
+    a2 = atoi(read);
     printf("Digite A3\n");
-    scanf("%d", &a3);
+    while ((read = readstr()) == NULL);
+    a3 = atoi(read);
     printf("Digite A4\n");
-    scanf("%d", &a4);
+    while ((read = readstr()) == NULL);
+    a4 = atoi(read);
     printf("Digite A5\n");
-    scanf("%d", &a5);
+    while ((read = readstr()) == NULL);
+    a5 = atoi(read);
     printf("Digite A6\n");
-    scanf("%d", &a6);
+    while ((read = readstr()) == NULL);
+    a6 = atoi(read);
     printf("Digite A7\n");
-    scanf("%d", &a7);
+    while ((read = readstr()) == NULL);
+    a7 = atoi(read);
     
     printf("Digite B0\n");
-    scanf("%d", &b0);
+    while ((read = readstr()) == NULL);
+    b0 = atoi(read);
     printf("Digite B1\n");
-    scanf("%d", &b1);
+    while ((read = readstr()) == NULL);
+    b1 = atoi(read);
     printf("Digite B2\n");
-    scanf("%d", &b2);
+    while ((read = readstr()) == NULL);
+    b2 = atoi(read);
     printf("Digite B3\n");
-    scanf("%d", &b3);
+    while ((read = readstr()) == NULL);
+    b3 = atoi(read);
     printf("Digite B4\n");
-    scanf("%d", &b4);
+    while ((read = readstr()) == NULL);
+    b4 = atoi(read);
     printf("Digite B5\n");
-    scanf("%d", &b5);
+    while ((read = readstr()) == NULL);
+    b5 = atoi(read);
     printf("Digite B6\n");
-    scanf("%d", &b6);
+    while ((read = readstr()) == NULL);
+    b6 = atoi(read);
     printf("Digite B7\n");
-    scanf("%d", &b7);
+    while ((read = readstr()) == NULL);
+    b7 = atoi(read);
 
     // escreve os valores e dá start
     dot_product_a0_write(a0);
@@ -147,13 +164,17 @@ static void calculate_dot_product(void)
     dot_product_b5_write(b5);
     dot_product_b6_write(b6);
     dot_product_b7_write(b7);
+    
+    printf("Iniciando calculo...\n");
 
     dot_product_start_write(1);
-    for (int i = 0; i < 256; ++i) { /* pequeno atraso */ }
+    for (int i = 0; i < 256; i++) { /* pequeno atraso */ }
     dot_product_start_write(0);
+    
+    printf("Aguardando resultado...\n");
 
     // espera cálculo terminar
-    while (!dot_product_done_read());
+    while (dot_product_done_read() == 0);
 
     // lê resultado
     result = dot_product_result_read();
