@@ -75,6 +75,8 @@ int main()
 {
     initializeComponents();
 
+    setDisplay("Inicializado");
+
     // SPI initialisation. This example will use SPI at 1MHz.
     spi_init(SPI_PORT, 1000*1000);
     gpio_set_function(PIN_MISO, GPIO_FUNC_SPI);
