@@ -1,9 +1,17 @@
 #include <stdio.h>
 #include "pico/stdlib.h"
+#include "pico/bootrom.h"
 #include "hardware/spi.h"
 #include "hardware/i2c.h"
 #include "hardware/pio.h"
 #include "hardware/uart.h"
+
+#define IN 0
+#define OUT 1
+#define PRESSED 0
+#define NOT_PRESSED 1
+
+#define RESET_BUTTON_PIN 5
 
 // SPI Defines
 // We are going to use SPI 0, and allocate it to the following GPIO pins
@@ -22,6 +30,11 @@
 #define I2C_SCL 9
 
 #include "blink.pio.h"
+
+bool resetButtonStatus = NOT_PRESSED;
+
+void initializeComponents();
+void readButtons();
 
 void blink_pin_forever(PIO pio, uint sm, uint offset, uint pin, uint freq) {
     blink_program_init(pio, sm, offset, pin);
@@ -48,7 +61,7 @@ void blink_pin_forever(PIO pio, uint sm, uint offset, uint pin, uint freq) {
 
 int main()
 {
-    stdio_init_all();
+    initializeComponents();
 
     // SPI initialisation. This example will use SPI at 1MHz.
     spi_init(SPI_PORT, 1000*1000);
@@ -99,7 +112,25 @@ int main()
     // For more examples of UART use see https://github.com/raspberrypi/pico-examples/tree/master/uart
 
     while (true) {
-        printf("Hello, world!\n");
-        sleep_ms(1000);
+        readButtons();
+
+        if (resetButtonStatus == PRESSED)
+        {
+            reset_usb_boot(0, 0);
+        }
     }
+}
+
+void initializeComponents()
+{
+    stdio_init_all();
+
+    gpio_init(RESET_BUTTON_PIN);
+    gpio_set_dir(RESET_BUTTON_PIN, IN);
+    gpio_pull_up(RESET_BUTTON_PIN);
+}
+
+void readButtons()
+{
+    resetButtonStatus = gpio_get(RESET_BUTTON_PIN);
 }
