@@ -6,33 +6,25 @@
 #include "hardware/pio.h"
 #include "hardware/uart.h"
 #include "include/ssd1306.h"
+#include "include/rfm96.h"
+#include "math.h"
+
+#define RESET_BUTTON_PIN 5
+#define DIO0_PIN 8
+#define DISPLAY_SDA_PIN 14
+#define DISPLAY_SCL_PIN 15
+#define MISO_PIN 16
+#define CS_PIN 17
+#define SCK_PIN 18
+#define MOSI_PIN 19
+#define RST_PIN 20
 
 #define IN 0
 #define OUT 1
 #define PRESSED 0
 #define NOT_PRESSED 1
 
-#define RESET_BUTTON_PIN 5
-#define DISPLAY_SDA_PIN 14
-#define DISPLAY_SCL_PIN 15
-
-// SPI Defines
-// We are going to use SPI 0, and allocate it to the following GPIO pins
-// Pins can be changed, see the GPIO function select table in the datasheet for information on GPIO assignments
-#define SPI_PORT spi0
-#define PIN_MISO 16
-#define PIN_CS   17
-#define PIN_SCK  18
-#define PIN_MOSI 19
-
-// I2C defines
-// This example will use I2C0 on GPIO8 (SDA) and GPIO9 (SCL) running at 400KHz.
-// Pins can be changed, see the GPIO function select table in the datasheet for information on GPIO assignments
-#define I2C_PORT i2c0
-#define I2C_SDA 8
-#define I2C_SCL 9
-
-#include "blink.pio.h"
+#define LORA_FREQUENCY 915E6
 
 bool resetButtonStatus = NOT_PRESSED;
 
@@ -43,33 +35,16 @@ struct render_area frame_area = {
     end_page : ssd1306_n_pages - 1
 };
 
+typedef struct {
+    int16_t temperature;
+    int16_t humidity;
+} sensorData;
+
 void initializeComponents();
 void readButtons();
 void resetIntoBootselMode();
 void setDisplay(char *message);
-
-void blink_pin_forever(PIO pio, uint sm, uint offset, uint pin, uint freq) {
-    blink_program_init(pio, sm, offset, pin);
-    pio_sm_set_enabled(pio, sm, true);
-
-    printf("Blinking pin %d at %d Hz\n", pin, freq);
-
-    // PIO counter program takes 3 more cycles in total than we pass as
-    // input (wait for n + 1; mov; jmp)
-    pio->txf[sm] = (125000000 / (2 * freq)) - 3;
-}
-
-// UART defines
-// By default the stdout UART is `uart0`, so we will use the second one
-#define UART_ID uart1
-#define BAUD_RATE 115200
-
-// Use pins 4 and 5 for UART1
-// Pins can be changed, see the GPIO function select table in the datasheet for information on GPIO assignments
-#define UART_TX_PIN 4
-#define UART_RX_PIN 5
-
-
+void setDisplayData(float receivedTemperature, float receivedHumidity);
 
 int main()
 {
@@ -77,60 +52,19 @@ int main()
 
     setDisplay("Inicializado");
 
-    // SPI initialisation. This example will use SPI at 1MHz.
-    spi_init(SPI_PORT, 1000*1000);
-    gpio_set_function(PIN_MISO, GPIO_FUNC_SPI);
-    gpio_set_function(PIN_CS,   GPIO_FUNC_SIO);
-    gpio_set_function(PIN_SCK,  GPIO_FUNC_SPI);
-    gpio_set_function(PIN_MOSI, GPIO_FUNC_SPI);
+    sensorData receivedData;
     
-    // Chip select is active-low, so we'll initialise it to a driven-high state
-    gpio_set_dir(PIN_CS, GPIO_OUT);
-    gpio_put(PIN_CS, 1);
-    // For more examples of SPI use see https://github.com/raspberrypi/pico-examples/tree/master/spi
-
-    // I2C Initialisation. Using it at 400Khz.
-    i2c_init(I2C_PORT, 400*1000);
-    
-    gpio_set_function(I2C_SDA, GPIO_FUNC_I2C);
-    gpio_set_function(I2C_SCL, GPIO_FUNC_I2C);
-    gpio_pull_up(I2C_SDA);
-    gpio_pull_up(I2C_SCL);
-    // For more examples of I2C use see https://github.com/raspberrypi/pico-examples/tree/master/i2c
-
-    // PIO Blinking example
-    PIO pio = pio0;
-    uint offset = pio_add_program(pio, &blink_program);
-    printf("Loaded program at %d\n", offset);
-    
-    #ifdef PICO_DEFAULT_LED_PIN
-    blink_pin_forever(pio, 0, offset, PICO_DEFAULT_LED_PIN, 3);
-    #else
-    blink_pin_forever(pio, 0, offset, 6, 3);
-    #endif
-    // For more pio examples see https://github.com/raspberrypi/pico-examples/tree/master/pio
-
-    // Set up our UART
-    uart_init(UART_ID, BAUD_RATE);
-    // Set the TX and RX pins by using the function select on the GPIO
-    // Set datasheet for more information on function select
-    gpio_set_function(UART_TX_PIN, GPIO_FUNC_UART);
-    gpio_set_function(UART_RX_PIN, GPIO_FUNC_UART);
-    
-    // Use some the various UART functions to send out data
-    // In a default system, printf will also output via the default UART
-    
-    // Send out a string, with CR/LF conversions
-    uart_puts(UART_ID, " Hello, UART!\n");
-    
-    // For more examples of UART use see https://github.com/raspberrypi/pico-examples/tree/master/uart
-
     while (true) {
         readButtons();
+        int receivedBytes = lora_receive_bytes((uint8_t *)&receivedData, sizeof(receivedData));
 
         if (resetButtonStatus == PRESSED)
         {
             resetIntoBootselMode();
+        }
+        else if (receivedBytes == sizeof(receivedData))
+        {
+            setDisplayData(receivedData.temperature / 100.0f, receivedData.humidity / 100.0f);
         }
     }
 }
@@ -151,6 +85,25 @@ void initializeComponents()
     ssd1306_init();
     calculate_render_area_buffer_length(&frame_area);
     setDisplay("Inicializando");
+
+    rfm96_config_t lora_configuration =
+    {
+        .spi_instance = spi0,
+        .pin_miso = MISO_PIN,
+        .pin_cs = CS_PIN,
+        .pin_sck = SCK_PIN,
+        .pin_mosi = MOSI_PIN,
+        .pin_rst = RST_PIN,
+        .pin_dio0 = DIO0_PIN,
+        .frequency = LORA_FREQUENCY
+    };
+    if (!lora_init(lora_configuration))
+    {
+        setDisplay("LoRa falhou");
+        while (1);
+    }
+    setDisplay("LoRa inicializado");
+    lora_start_rx_continuous();
 }
 
 void readButtons()
@@ -170,5 +123,24 @@ void setDisplay(char *message)
     
     ssd1306_draw_string(ssd, 0, 8, message);
     
+    render_on_display(ssd, &frame_area);
+}
+
+void setDisplayData(float receivedTemperature, float receivedHumidity)
+{
+    int wholeTemperature = (int)receivedTemperature;
+    int fractionTemperature = (int)((fabsf(receivedTemperature) - abs(wholeTemperature)) * 100 + 0.5f);
+    int wholeHumidity = (int)receivedHumidity;
+    int fractionHumidity = (int)((fabsf(receivedHumidity) - abs(wholeHumidity)) * 100 + 0.5f);
+
+    char temperatureString[32];
+    char humidityString[32];
+    sprintf(temperatureString, "Tmp: %d.%02dC", wholeTemperature, fractionTemperature);
+    sprintf(humidityString,  "Umd: %d.%02d%%", wholeHumidity, fractionHumidity);
+
+    uint8_t ssd[ssd1306_buffer_length];
+    memset(ssd, 0, ssd1306_buffer_length);
+    ssd1306_draw_string(ssd, 0, 8, temperatureString);
+    ssd1306_draw_string(ssd, 0, 24, humidityString);
     render_on_display(ssd, &frame_area);
 }

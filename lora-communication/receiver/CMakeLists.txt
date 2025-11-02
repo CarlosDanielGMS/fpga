@@ -35,7 +35,7 @@ pico_sdk_init()
 
 # Add executable. Default name is the project name, version 0.1
 
-add_executable(receiver receiver.c include/ssd1306_i2c.c)
+add_executable(receiver receiver.c include/ssd1306_i2c.c include/rfm96.c)
 
 pico_set_program_name(receiver "receiver")
 pico_set_program_version(receiver "0.1")
