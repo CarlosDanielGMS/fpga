@@ -19,8 +19,12 @@ from litex.soc.integration.soc_core import *
 from litex.soc.integration.builder import *
 from litex.soc.cores.video import VideoHDMIPHY
 from litex.soc.cores.led import LedChaser
+from litex.build.generic_platform import Subsignal, Pins, IOStandard
 
 from litex.soc.interconnect.csr import *
+from litex.soc.cores.bitbang import I2CMaster
+from litex.soc.cores.spi import SPIMaster
+from litex.soc.cores.gpio import GPIOOut
 
 from litedram.modules import M12L64322A # Compatible with EM638325-6H.
 from litedram.phy import GENSDRPHY, HalfRateGENSDRPHY
