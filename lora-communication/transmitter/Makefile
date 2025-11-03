@@ -1,7 +1,7 @@
 # -------------------------------
 # Basic configs
 # -------------------------------
-TOP       = dot_product
+TOP       = transmitter
 BUILDDIR  = build
 
 # -------------------------------

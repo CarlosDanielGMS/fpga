@@ -27,8 +27,6 @@ from litedram.phy import GENSDRPHY, HalfRateGENSDRPHY
 
 from liteeth.phy.ecp5rgmii import LiteEthPHYRGMII
 
-from dot_product import Dot_Product
-
 # CRG ----------------------------------------------------------------------------------------------
 
 class _CRG(LiteXModule):
@@ -130,9 +128,6 @@ class BaseSoC(SoCCore):
             ledn = platform.request_all("user_led_n")
             self.leds = LedChaser(pads=ledn, sys_clk_freq=sys_clk_freq)
 
-        self.submodules.dot_product = Dot_Product(self.platform)
-        self.add_csr("dot_product")
-
         # SPI Flash --------------------------------------------------------------------------------
         if board == "i5":
             from litespi.modules import GD25Q16 as SpiFlashModule
@@ -141,6 +136,39 @@ class BaseSoC(SoCCore):
 
         from litespi.opcodes import SpiNorFlashOpCodes as Codes
         self.add_spi_flash(mode="1x", module=SpiFlashModule(Codes.READ_1_1_1))
+
+        spi_pads = [
+            ("spi", 0,
+                Subsignal("clk",  Pins("G20")),
+                Subsignal("mosi", Pins("L18")),
+                Subsignal("miso", Pins("M18")),
+                Subsignal("cs_n", Pins("N17")),
+                IOStandard("LVCMOS33")
+            ),
+            ("lora_reset", 0, Pins("L20"), IOStandard("LVCMOS33"))
+        ]
+
+        platform.add_extension(spi_pads)
+        
+        self.spi = SPIMaster(pads=platform.request("spi"), data_width=8, sys_clk_freq=sys_clk_freq, spi_clk_freq=1e6)
+        self.add_csr("spi")
+        
+        self.submodules.lora_reset = GPIOOut(platform.request("lora_reset"))
+        self.add_csr("lora_reset")
+
+        # I2C --------------------------------------------------------------------------------------
+        i2c_pads = [
+            ("i2c", 0,
+                Subsignal("scl", Pins("U17")),
+                Subsignal("sda", Pins("U18")),
+                IOStandard("LVCMOS33")
+            )
+        ]
+
+        platform.add_extension(i2c_pads)
+        
+        self.submodules.i2c = I2CMaster(pads=platform.request("i2c"))
+        self.add_csr("i2c")
 
         # SDR SDRAM --------------------------------------------------------------------------------
         if not self.integrated_main_ram_size:
