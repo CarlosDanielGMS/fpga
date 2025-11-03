@@ -96,10 +96,10 @@ static void toggle_led(void)
 }
 
 static void send_sensor_data(void) {
-    sensor readData; 
+    sensorData readData; 
 
     if (sensor_get_data(&readData)) {
-        lora_send((uint8_t*)&readData, sizeof(readData))
+        lora_send((uint8_t*)&readData, sizeof(readData));
     }
 }
 
