@@ -2,8 +2,8 @@ OUT = build
 TFLM = .
 
 # Tools
-CXX = riscv-none-elf-g++
-AR = riscv-none-elf-ar
+CXX = riscv32-unknown-elf-g++
+AR = riscv32-unknown-elf-ar
 
 # TFLM defines
 TFLM_DEFINES = -DTF_LITE_STATIC_MEMORY -DTF_LITE_DISABLE_X86_NEON
