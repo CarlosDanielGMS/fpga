@@ -27,7 +27,10 @@ from litedram.phy import GENSDRPHY, HalfRateGENSDRPHY
 
 from liteeth.phy.ecp5rgmii import LiteEthPHYRGMII
 
-from dot_product import Dot_Product
+from litex.soc.cores.spi import SPIMaster
+from litex.soc.cores.bitbang import I2CMaster
+from litex.soc.cores.gpio import GPIOOut
+from litex.build.generic_platform import Subsignal, Pins, IOStandard
 
 # CRG ----------------------------------------------------------------------------------------------
 
@@ -130,9 +133,6 @@ class BaseSoC(SoCCore):
             ledn = platform.request_all("user_led_n")
             self.leds = LedChaser(pads=ledn, sys_clk_freq=sys_clk_freq)
 
-        self.submodules.dot_product = Dot_Product(self.platform)
-        self.add_csr("dot_product")
-
         # SPI Flash --------------------------------------------------------------------------------
         if board == "i5":
             from litespi.modules import GD25Q16 as SpiFlashModule
@@ -184,6 +184,21 @@ class BaseSoC(SoCCore):
                 self.add_video_terminal(phy=self.videophy, timings="800x600@60Hz", clock_domain="hdmi")
             if with_video_framebuffer:
                 self.add_video_framebuffer(phy=self.videophy, timings="800x600@60Hz", clock_domain="hdmi")
+
+        # LEDs -------------------------------------------------------------------------------------
+        leds_pads = [
+            (
+                "leds_ext",
+                0,
+                Pins("P17 P18 N18 L20 L18 G20 M18 N17"),
+                IOStandard("LVCMOS33")
+            )
+        ]
+
+        platform.add_extension(leds_pads)
+
+        self.submodules.leds = GPIOOut(platform.request("leds_ext"))
+        self.add_csr("leds")
 
 # Build --------------------------------------------------------------------------------------------
 
