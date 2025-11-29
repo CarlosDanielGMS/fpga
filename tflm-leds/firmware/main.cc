@@ -223,7 +223,6 @@ int main(void)
 
         int8_t y_q = output->data.int8[0];
         float y = (y_q - output->params.zero_point) * output->params.scale;
-        float expected = sin(x);
 
         uint8_t led_pattern = sine_to_leds(y);
         set_leds(led_pattern);
