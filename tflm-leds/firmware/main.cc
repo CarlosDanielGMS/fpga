@@ -227,7 +227,7 @@ int main(void)
         uint8_t led_pattern = sine_to_leds(y);
         set_leds(led_pattern);
 
-        for (volatile i = 0; i < 25000; i++);
+        for (volatile int i = 0; i < 25000; i++);
         
         count++;
         if (count >= 200)
